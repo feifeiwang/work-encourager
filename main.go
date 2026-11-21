@@ -133,8 +133,6 @@ var (
 	progL    *walk.Label
 	prog     *walk.ProgressBar
 	monthL   *walk.Label
-	rateL    *walk.Label
-	fullL    *walk.Label
 	titleL   *walk.Label
 	capL     *walk.Label
 	skinBtn  *walk.PushButton
@@ -235,8 +233,6 @@ func update() {
 	prog.SetValue(int(worked * 100))
 
 	monthL.SetText(fmt.Sprintf("¥%.4f", monthEarn))
-	rateL.SetText(fmt.Sprintf("时薪 ¥%.2f", hourly))
-	fullL.SetText(fmt.Sprintf("今日满勤可得 ¥%.2f", dailyEarn))
 
 	if status == "上班中" && running {
 		statusL.SetTextColor(cMint)
@@ -333,9 +329,9 @@ func main() {
 	MainWindow{
 		Title:      "上班鼓励器",
 		AssignTo:   &mw,
-		MinSize:    Size{Width: 245, Height: 390},
-		MaxSize:    Size{Width: 245, Height: 390},
-		Size:       Size{Width: 245, Height: 390}, // 打开即为此大小，不要用户手动调整
+		MinSize:    Size{Width: 245, Height: 330},
+		MaxSize:    Size{Width: 245, Height: 330},
+		Size:       Size{Width: 245, Height: 330}, // 打开即为此大小，不要用户手动调整
 		Background: SolidColorBrush{Color: cBg},
 		Font:       Font{Family: "Microsoft YaHei", PointSize: 8},
 		Layout:     VBox{Margins: Margins{Left: 8, Top: 6, Right: 8, Bottom: 8}, Spacing: 5},
@@ -354,25 +350,26 @@ func main() {
 				},
 			},
 			Composite{
-				// 左栏：日期/时间/状态/倒计时；右栏：今日已赚/金额/速度
-				Layout: HBox{Spacing: 6, Margins: Margins{}},
+				// 左栏（贴左）：日期/时间/状态/倒计时；右栏（贴右）：今日已赚/金额/速度
+				Layout: HBox{Margins: Margins{}},
 				Children: []Widget{
 					Composite{
-						Layout: VBox{Spacing: 2, Margins: Margins{}},
+						Layout: VBox{Spacing: 3, Margins: Margins{}},
 						Children: []Widget{
-							Label{AssignTo: &dateL, TextColor: cSub, Font: Font{PointSize: 7}},
-							Label{AssignTo: &clockL, Text: "15:04:05", Font: Font{PointSize: 11, Bold: true}, TextColor: cBody},
-							Label{AssignTo: &statusL, Text: "上班中", Font: Font{PointSize: 11, Bold: true}},
-							Label{AssignTo: &cdL, Text: "距下班 --", TextColor: cSub, Font: Font{PointSize: 7}},
+							Label{AssignTo: &dateL, TextColor: cSub, Font: Font{PointSize: 8}},
+							Label{AssignTo: &clockL, Text: "15:04:05", Font: Font{PointSize: 13, Bold: true}, TextColor: cBody},
+							Label{AssignTo: &statusL, Text: "上班中", Font: Font{PointSize: 12, Bold: true}},
+							Label{AssignTo: &cdL, Text: "距下班 --", TextColor: cSub, Font: Font{PointSize: 8}},
 						},
 					},
+					HSpacer{},
 					Composite{
-						Layout: VBox{Spacing: 2, Margins: Margins{}},
+						Layout: VBox{Spacing: 3, Margins: Margins{}},
 						Children: []Widget{
-							Label{AssignTo: &capL, Text: "今日已赚", TextColor: cSub, Font: Font{PointSize: 7}},
-							Label{AssignTo: &moneyL, Text: "¥0.0000", Font: Font{PointSize: 13, Bold: true}, TextColor: cMoney},
+							Label{AssignTo: &capL, Text: "今日已赚", TextColor: cSub, Font: Font{PointSize: 8}},
+							Label{AssignTo: &moneyL, Text: "¥0.0000", Font: Font{PointSize: 16, Bold: true}, TextColor: cMoney},
 							VSpacer{},
-							Label{AssignTo: &speedL, TextColor: cSub, Font: Font{PointSize: 7}},
+							Label{AssignTo: &speedL, TextColor: cSub, Font: Font{PointSize: 8}},
 						},
 					},
 				},
@@ -397,14 +394,6 @@ func main() {
 					Label{Text: "本月累计", TextColor: cSub},
 					HSpacer{},
 					Label{AssignTo: &monthL, Font: Font{PointSize: 10, Bold: true}, TextColor: cMoney},
-				},
-			},
-			Composite{
-				Layout: HBox{Spacing: 4},
-				Children: []Widget{
-					Label{AssignTo: &rateL, TextColor: cSub},
-					HSpacer{},
-					Label{AssignTo: &fullL, TextColor: cSub},
 				},
 			},
 		},
