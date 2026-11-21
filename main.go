@@ -22,6 +22,7 @@ type Config struct {
 	DailyHours    float64 `json:"每日工作时长"` // 每天实际工作小时数
 	StartTime     string  `json:"上班时间"`   // HH:MM
 	EndTime       string  `json:"下班时间"`   // HH:MM
+	Theme         int     `json:"主题"`     // 配色编号
 }
 
 func defaultConfig() Config {
@@ -71,18 +72,44 @@ var items = []struct {
 	{"一辆五菱宏光", 45000}, {"一个车位", 80000},
 }
 
-// ---------- 配色 ----------
+// ---------- 配色（换肤） ----------
 
+type Theme struct {
+	name                 string
+	bg, main, money, sub, body, off, idle walk.Color
+}
+
+var themes = []Theme{
+	{name: "薄荷绿", bg: walk.RGB(0xf2, 0xfa, 0xf7), main: walk.RGB(0x2e, 0xa7, 0x7d), money: walk.RGB(0x1f, 0xa0, 0x74), sub: walk.RGB(0x7a, 0x94, 0x88), body: walk.RGB(0x44, 0x55, 0x4e), off: walk.RGB(0xe0, 0x9a, 0x50), idle: walk.RGB(0x9a, 0xaa, 0xa2)},
+	{name: "奶油黄", bg: walk.RGB(0xff, 0xf9, 0xee), main: walk.RGB(0xd9, 0xa4, 0x41), money: walk.RGB(0xc9, 0x8a, 0x2d), sub: walk.RGB(0x9c, 0x8b, 0x6e), body: walk.RGB(0x5c, 0x53, 0x46), off: walk.RGB(0xe0, 0x7b, 0x54), idle: walk.RGB(0xb5, 0xa8, 0x8e)},
+	{name: "樱花粉", bg: walk.RGB(0xfd, 0xf3, 0xf5), main: walk.RGB(0xd9, 0x7b, 0x8f), money: walk.RGB(0xc9, 0x68, 0x77), sub: walk.RGB(0xa2, 0x84, 0x8c), body: walk.RGB(0x5c, 0x4a, 0x50), off: walk.RGB(0xe0, 0xa0, 0x50), idle: walk.RGB(0xb7, 0x9c, 0xa5)},
+	{name: "雾霾蓝", bg: walk.RGB(0xf0, 0xf5, 0xfa), main: walk.RGB(0x5b, 0x8d, 0xb8), money: walk.RGB(0x41, 0x79, 0xa8), sub: walk.RGB(0x7e, 0x93, 0xa6), body: walk.RGB(0x42, 0x50, 0x5c), off: walk.RGB(0xc9, 0x8a, 0x5a), idle: walk.RGB(0x9a, 0xa8, 0xb5)},
+	{name: "紫罗兰", bg: walk.RGB(0xf6, 0xf4, 0xfa), main: walk.RGB(0x8b, 0x7f, 0xc7), money: walk.RGB(0x74, 0x68, 0xb5), sub: walk.RGB(0x8f, 0x8a, 0xa6), body: walk.RGB(0x4c, 0x48, 0x59), off: walk.RGB(0xc9, 0x8a, 0x5a), idle: walk.RGB(0xa8, 0xa3, 0xbc)},
+}
+
+// 当前生效的配色（由 setTheme 切换）
 var (
-	// 清新薄荷配色
-	cMint = walk.RGB(0x2e, 0xa7, 0x7d) // 主色：薄荷绿
-	cMoney = walk.RGB(0x1f, 0xa0, 0x74) // 金额：清爽绿
-	cSub   = walk.RGB(0x7a, 0x94, 0x88) // 次要文字：灰绿
-	cBody  = walk.RGB(0x44, 0x55, 0x4e) // 正文：墨绿灰
-	cOff   = walk.RGB(0xe0, 0x9a, 0x50) // 下班：柔和橙
-	cIdle  = walk.RGB(0x9a, 0xaa, 0xa2) // 未上班：浅灰
-	cBg    = walk.RGB(0xf2, 0xfa, 0xf7) // 背景：极浅薄荷
+	cMint, cMoney, cSub, cBody, cOff, cIdle, cBg walk.Color
+	bgBrush *walk.SolidColorBrush
 )
+
+func setTheme(i int) {
+	cfg.Theme = i % len(themes)
+	t := themes[cfg.Theme]
+	cBg, cMint, cMoney, cSub, cBody, cOff, cIdle = t.bg, t.main, t.money, t.sub, t.body, t.off, t.idle
+	if mw != nil {
+		if bgBrush != nil {
+			bgBrush.Dispose()
+		}
+		b, err := walk.NewSolidColorBrush(cBg)
+		if err != nil {
+			return
+		}
+		bgBrush = b
+		mw.SetBackground(bgBrush)
+		update()
+	}
+}
 
 // ---------- 全局状态 ----------
 
@@ -107,6 +134,10 @@ var (
 	monthL   *walk.Label
 	rateL    *walk.Label
 	fullL    *walk.Label
+	titleL   *walk.Label
+	capL     *walk.Label
+	noteL    *walk.Label
+	skinBtn  *walk.PushButton
 	toggleBtn *walk.PushButton
 	pinBtn   *walk.PushButton
 )
@@ -214,6 +245,10 @@ func update() {
 		statusL.SetTextColor(cIdle)
 	}
 	statusL.SetText(status)
+	titleL.SetTextColor(cMint)
+	capL.SetTextColor(cSub)
+	noteL.SetTextColor(cIdle)
+	skinBtn.SetText("🎨 " + themes[cfg.Theme].name)
 }
 
 // ---------- 置顶 ----------
@@ -291,32 +326,37 @@ func openSettings() {
 
 func main() {
 	cfg = loadConfig()
+	setTheme(cfg.Theme)
 	vNow, lastReal = time.Now(), time.Now()
 	itemIdx = rnd.Intn(len(items))
 
 	MainWindow{
 		Title:      "上班鼓励器",
 		AssignTo:   &mw,
-		MinSize:    Size{Width: 250, Height: 400},
-		MaxSize:    Size{Width: 250, Height: 400},
+		MinSize:    Size{Width: 235, Height: 400},
+		MaxSize:    Size{Width: 235, Height: 400},
 		Background: SolidColorBrush{Color: cBg},
 		Font:       Font{Family: "Microsoft YaHei", PointSize: 8},
-		Layout:     VBox{Margins: Margins{Left: 10, Top: 6, Right: 10, Bottom: 10}, Spacing: 5},
+		Layout:     VBox{Margins: Margins{Left: 8, Top: 6, Right: 8, Bottom: 8}, Spacing: 5},
 		Children: []Widget{
 			Composite{
 				Layout: HBox{Spacing: 4},
 				Children: []Widget{
-					Label{Text: "🔥 上班鼓励器", Font: Font{PointSize: 10, Bold: true}, TextColor: cMint},
+					Label{AssignTo: &titleL, Text: "上班鼓励器", Font: Font{PointSize: 9, Bold: true}, TextColor: cMint},
 					HSpacer{},
+					PushButton{AssignTo: &skinBtn, Text: "🎨 换肤", OnClicked: func() {
+						setTheme(cfg.Theme + 1)
+						saveConfig(cfg)
+					}},
 					PushButton{AssignTo: &pinBtn, Text: "📌 置顶", OnClicked: togglePin},
-					PushButton{Text: "⚙ 设置", OnClicked: openSettings},
+					PushButton{Text: "⚙", OnClicked: openSettings},
 				},
 			},
 			Label{AssignTo: &dateL, TextColor: cSub},
 			Label{AssignTo: &statusL, Text: "上班中", Font: Font{PointSize: 12, Bold: true}},
 			Label{AssignTo: &cdL, Text: "距离下班还有 --", TextColor: cSub},
 			VSpacer{Size: 2},
-			Label{Text: "今日已赚", TextColor: cSub},
+			Label{AssignTo: &capL, Text: "今日已赚", TextColor: cSub},
 			Label{AssignTo: &moneyL, Text: "¥0.0000", Font: Font{PointSize: 15, Bold: true}, TextColor: cMoney},
 			Label{AssignTo: &speedL, TextColor: cSub},
 			Label{AssignTo: &phraseL, TextColor: cBody},
@@ -341,7 +381,7 @@ func main() {
 					Label{AssignTo: &monthL, Font: Font{PointSize: 10, Bold: true}, TextColor: cMoney},
 				},
 			},
-			Label{Text: "已过的日子按满勤补算。本月只计已赚，不含亏损。", Font: Font{PointSize: 6}, TextColor: cIdle},
+			Label{AssignTo: &noteL, Text: "已过的日子按满勤补算。本月只计已赚，不含亏损。", Font: Font{PointSize: 6}, TextColor: cIdle},
 			Composite{
 				Layout: HBox{},
 				Children: []Widget{
