@@ -71,6 +71,19 @@ var items = []struct {
 	{"一辆五菱宏光", 45000}, {"一个车位", 80000},
 }
 
+// ---------- 配色 ----------
+
+var (
+	// 清新薄荷配色
+	cMint = walk.RGB(0x2e, 0xa7, 0x7d) // 主色：薄荷绿
+	cMoney = walk.RGB(0x1f, 0xa0, 0x74) // 金额：清爽绿
+	cSub   = walk.RGB(0x7a, 0x94, 0x88) // 次要文字：灰绿
+	cBody  = walk.RGB(0x44, 0x55, 0x4e) // 正文：墨绿灰
+	cOff   = walk.RGB(0xe0, 0x9a, 0x50) // 下班：柔和橙
+	cIdle  = walk.RGB(0x9a, 0xaa, 0xa2) // 未上班：浅灰
+	cBg    = walk.RGB(0xf2, 0xfa, 0xf7) // 背景：极浅薄荷
+)
+
 // ---------- 全局状态 ----------
 
 var (
@@ -194,11 +207,11 @@ func update() {
 	fullL.SetText(fmt.Sprintf("今日满勤可得 ¥%.2f", dailyEarn))
 
 	if status == "上班中" && running {
-		statusL.SetTextColor(walk.RGB(0x1a, 0x7f, 0x37))
+		statusL.SetTextColor(cMint)
 	} else if status == "下班啦 🎉" {
-		statusL.SetTextColor(walk.RGB(0xc0, 0x50, 0x10))
+		statusL.SetTextColor(cOff)
 	} else {
-		statusL.SetTextColor(walk.RGB(0x88, 0x88, 0x88))
+		statusL.SetTextColor(cIdle)
 	}
 	statusL.SetText(status)
 }
@@ -231,7 +244,7 @@ func openSettings() {
 	Dialog{
 		Title:    "设置",
 		AssignTo: &dlg,
-		MinSize:  Size{Width: 320, Height: 220},
+		MinSize:  Size{Width: 280, Height: 200},
 		Layout:   VBox{},
 		DefaultButton: &okPB,
 		Children: []Widget{
@@ -282,32 +295,33 @@ func main() {
 	itemIdx = rnd.Intn(len(items))
 
 	MainWindow{
-		Title:    "上班鼓励器",
-		AssignTo: &mw,
-		MinSize:  Size{Width: 330, Height: 480},
-		MaxSize:  Size{Width: 330, Height: 480},
-		Font:     Font{Family: "Microsoft YaHei", PointSize: 9},
-		Layout:   VBox{Margins: Margins{Left: 14, Top: 8, Right: 14, Bottom: 12}, Spacing: 6},
+		Title:      "上班鼓励器",
+		AssignTo:   &mw,
+		MinSize:    Size{Width: 250, Height: 400},
+		MaxSize:    Size{Width: 250, Height: 400},
+		Background: SolidColorBrush{Color: cBg},
+		Font:       Font{Family: "Microsoft YaHei", PointSize: 8},
+		Layout:     VBox{Margins: Margins{Left: 10, Top: 6, Right: 10, Bottom: 10}, Spacing: 5},
 		Children: []Widget{
 			Composite{
-				Layout: HBox{Spacing: 6},
+				Layout: HBox{Spacing: 4},
 				Children: []Widget{
-					Label{Text: "🔥 上班鼓励器", Font: Font{PointSize: 11, Bold: true}},
+					Label{Text: "🔥 上班鼓励器", Font: Font{PointSize: 10, Bold: true}, TextColor: cMint},
 					HSpacer{},
 					PushButton{AssignTo: &pinBtn, Text: "📌 置顶", OnClicked: togglePin},
 					PushButton{Text: "⚙ 设置", OnClicked: openSettings},
 				},
 			},
-			Label{AssignTo: &dateL, TextColor: walk.RGB(0x66, 0x66, 0x66)},
-			Label{AssignTo: &statusL, Text: "上班中", Font: Font{PointSize: 15, Bold: true}},
-			Label{AssignTo: &cdL, Text: "距离下班还有 --"},
+			Label{AssignTo: &dateL, TextColor: cSub},
+			Label{AssignTo: &statusL, Text: "上班中", Font: Font{PointSize: 12, Bold: true}},
+			Label{AssignTo: &cdL, Text: "距离下班还有 --", TextColor: cSub},
 			VSpacer{Size: 2},
-			Label{Text: "今日已赚", TextColor: walk.RGB(0x66, 0x66, 0x66)},
-			Label{AssignTo: &moneyL, Text: "¥0.0000", Font: Font{PointSize: 19, Bold: true}, TextColor: walk.RGB(0x2b, 0x6c, 0xb0)},
-			Label{AssignTo: &speedL, TextColor: walk.RGB(0x66, 0x66, 0x66)},
-			Label{AssignTo: &phraseL, TextColor: walk.RGB(0x33, 0x33, 0x33)},
+			Label{Text: "今日已赚", TextColor: cSub},
+			Label{AssignTo: &moneyL, Text: "¥0.0000", Font: Font{PointSize: 15, Bold: true}, TextColor: cMoney},
+			Label{AssignTo: &speedL, TextColor: cSub},
+			Label{AssignTo: &phraseL, TextColor: cBody},
 			VSpacer{Size: 2},
-			PushButton{AssignTo: &toggleBtn, Text: "⏸ 关闭计时器", MinSize: Size{Width: 0, Height: 32}, OnClicked: func() {
+			PushButton{AssignTo: &toggleBtn, Text: "⏸ 关闭计时器", MinSize: Size{Width: 0, Height: 28}, OnClicked: func() {
 				running = !running
 				if running {
 					toggleBtn.SetText("⏸ 关闭计时器")
@@ -316,24 +330,24 @@ func main() {
 				}
 			}},
 			VSpacer{Size: 2},
-			Label{AssignTo: &progL, TextColor: walk.RGB(0x66, 0x66, 0x66)},
+			Label{AssignTo: &progL, TextColor: cSub},
 			ProgressBar{AssignTo: &prog, MinValue: 0, MaxValue: 100},
 			HSeparator{},
 			Composite{
 				Layout: HBox{},
 				Children: []Widget{
-					Label{Text: "本月累计"},
+					Label{Text: "本月累计", TextColor: cSub},
 					HSpacer{},
-					Label{AssignTo: &monthL, Font: Font{PointSize: 11, Bold: true}, TextColor: walk.RGB(0x2b, 0x6c, 0xb0)},
+					Label{AssignTo: &monthL, Font: Font{PointSize: 10, Bold: true}, TextColor: cMoney},
 				},
 			},
-			Label{Text: "已过的日子按满勤补算。本月只计已赚，不含亏损。", Font: Font{PointSize: 7}, TextColor: walk.RGB(0x99, 0x99, 0x99)},
+			Label{Text: "已过的日子按满勤补算。本月只计已赚，不含亏损。", Font: Font{PointSize: 6}, TextColor: cIdle},
 			Composite{
 				Layout: HBox{},
 				Children: []Widget{
-					Label{AssignTo: &rateL, TextColor: walk.RGB(0x66, 0x66, 0x66)},
+					Label{AssignTo: &rateL, TextColor: cSub},
 					HSpacer{},
-					Label{AssignTo: &fullL, TextColor: walk.RGB(0x66, 0x66, 0x66)},
+					Label{AssignTo: &fullL, TextColor: cSub},
 				},
 			},
 		},
