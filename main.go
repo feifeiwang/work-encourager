@@ -124,6 +124,7 @@ var (
 
 	mw       *walk.MainWindow
 	dateL    *walk.Label
+	clockL   *walk.Label
 	statusL  *walk.Label
 	cdL      *walk.Label
 	moneyL   *walk.Label
@@ -136,7 +137,6 @@ var (
 	fullL    *walk.Label
 	titleL   *walk.Label
 	capL     *walk.Label
-	noteL    *walk.Label
 	skinBtn  *walk.PushButton
 	toggleBtn *walk.PushButton
 	pinBtn   *walk.PushButton
@@ -187,18 +187,20 @@ func update() {
 	}
 
 	wd := [...]string{"周日", "周一", "周二", "周三", "周四", "周五", "周六"}[int(vNow.Weekday())]
-	dateL.SetText(vNow.Format("2006-01-02 ") + wd + "  " + vNow.Format("15:04:05"))
+	dateL.SetText(vNow.Format("2006-01-02 ") + wd)
+	clockL.SetText(vNow.Format("15:04:05"))
 
-	nMin := vNow.Hour()*60 + vNow.Minute()
+	nSec := vNow.Hour()*3600 + vNow.Minute()*60 + vNow.Second() // 秒级精度，金额才能按秒跳动
+	startSec, endSec := start*60, end*60
 	var worked float64 // 0~1
 	var status string
 	switch {
-	case nMin < start:
+	case nSec < startSec:
 		worked, status = 0, "还没上班"
-	case nMin >= end:
+	case nSec >= endSec:
 		worked, status = 1, "下班啦 🎉"
 	default:
-		worked = float64(nMin-start) / float64(end-start)
+		worked = float64(nSec-startSec) / float64(endSec-startSec)
 		status = "上班中"
 	}
 
@@ -212,12 +214,11 @@ func update() {
 	}
 
 	if status == "还没上班" {
-		cdL.SetText(fmt.Sprintf("距离下班还有 %s", fmtDur(float64((end-nMin))*60)))
+		cdL.SetText("距上班还有 " + fmtDur(float64(startSec-nSec)))
 	} else if status == "下班啦 🎉" {
-		cdL.SetText("今天的班上完了，好好休息！")
+		cdL.SetText("今天下班啦")
 	} else {
-		remain := float64(end*60-(nMin*60+vNow.Second()))
-		cdL.SetText(fmt.Sprintf("距离下班还有 %s", fmtDur(remain)))
+		cdL.SetText("距下班 " + fmtDur(float64(endSec-nSec)))
 	}
 
 	moneyL.SetText(fmt.Sprintf("¥%.4f", earned))
@@ -247,7 +248,6 @@ func update() {
 	statusL.SetText(status)
 	titleL.SetTextColor(cMint)
 	capL.SetTextColor(cSub)
-	noteL.SetTextColor(cIdle)
 	skinBtn.SetText("🎨 " + themes[cfg.Theme].name)
 }
 
@@ -333,8 +333,9 @@ func main() {
 	MainWindow{
 		Title:      "上班鼓励器",
 		AssignTo:   &mw,
-		MinSize:    Size{Width: 235, Height: 400},
-		MaxSize:    Size{Width: 235, Height: 400},
+		MinSize:    Size{Width: 245, Height: 390},
+		MaxSize:    Size{Width: 245, Height: 390},
+		Size:       Size{Width: 245, Height: 390}, // 打开即为此大小，不要用户手动调整
 		Background: SolidColorBrush{Color: cBg},
 		Font:       Font{Family: "Microsoft YaHei", PointSize: 8},
 		Layout:     VBox{Margins: Margins{Left: 8, Top: 6, Right: 8, Bottom: 8}, Spacing: 5},
@@ -352,13 +353,30 @@ func main() {
 					PushButton{Text: "⚙", OnClicked: openSettings},
 				},
 			},
-			Label{AssignTo: &dateL, TextColor: cSub},
-			Label{AssignTo: &statusL, Text: "上班中", Font: Font{PointSize: 12, Bold: true}},
-			Label{AssignTo: &cdL, Text: "距离下班还有 --", TextColor: cSub},
-			VSpacer{Size: 2},
-			Label{AssignTo: &capL, Text: "今日已赚", TextColor: cSub},
-			Label{AssignTo: &moneyL, Text: "¥0.0000", Font: Font{PointSize: 15, Bold: true}, TextColor: cMoney},
-			Label{AssignTo: &speedL, TextColor: cSub},
+			Composite{
+				// 左栏：日期/时间/状态/倒计时；右栏：今日已赚/金额/速度
+				Layout: HBox{Spacing: 6, Margins: Margins{}},
+				Children: []Widget{
+					Composite{
+						Layout: VBox{Spacing: 2, Margins: Margins{}},
+						Children: []Widget{
+							Label{AssignTo: &dateL, TextColor: cSub, Font: Font{PointSize: 7}},
+							Label{AssignTo: &clockL, Text: "15:04:05", Font: Font{PointSize: 11, Bold: true}, TextColor: cBody},
+							Label{AssignTo: &statusL, Text: "上班中", Font: Font{PointSize: 11, Bold: true}},
+							Label{AssignTo: &cdL, Text: "距下班 --", TextColor: cSub, Font: Font{PointSize: 7}},
+						},
+					},
+					Composite{
+						Layout: VBox{Spacing: 2, Margins: Margins{}},
+						Children: []Widget{
+							Label{AssignTo: &capL, Text: "今日已赚", TextColor: cSub, Font: Font{PointSize: 7}},
+							Label{AssignTo: &moneyL, Text: "¥0.0000", Font: Font{PointSize: 13, Bold: true}, TextColor: cMoney},
+							VSpacer{},
+							Label{AssignTo: &speedL, TextColor: cSub, Font: Font{PointSize: 7}},
+						},
+					},
+				},
+			},
 			Label{AssignTo: &phraseL, TextColor: cBody},
 			VSpacer{Size: 2},
 			PushButton{AssignTo: &toggleBtn, Text: "⏸ 关闭计时器", MinSize: Size{Width: 0, Height: 28}, OnClicked: func() {
@@ -381,9 +399,8 @@ func main() {
 					Label{AssignTo: &monthL, Font: Font{PointSize: 10, Bold: true}, TextColor: cMoney},
 				},
 			},
-			Label{AssignTo: &noteL, Text: "已过的日子按满勤补算。本月只计已赚，不含亏损。", Font: Font{PointSize: 6}, TextColor: cIdle},
 			Composite{
-				Layout: HBox{},
+				Layout: HBox{Spacing: 4},
 				Children: []Widget{
 					Label{AssignTo: &rateL, TextColor: cSub},
 					HSpacer{},
