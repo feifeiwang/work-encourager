@@ -154,6 +154,8 @@ namespace WorkEncourager
         Label titleL, dateL, clockL, statusL, cdL, capL, moneyL, speedL, phraseL, progL, monthL;
         Button skinBtn, pinBtn, setBtn, toggleBtn;
         ProgressBar bar;
+        Font moneyFont16, moneyFont14, moneyFont12, moneyFont10;
+        int moneyFontSize = 16;
         Timer timer;
         DateTime vNow, lastReal;
         bool running = true, topmost = false;
@@ -181,6 +183,10 @@ namespace WorkEncourager
             Font f12 = new Font("Microsoft YaHei", 12f, FontStyle.Bold);
             Font f13 = new Font("Microsoft YaHei", 13f, FontStyle.Bold);
             Font f16 = new Font("Microsoft YaHei", 16f, FontStyle.Bold);
+            moneyFont16 = f16;
+            moneyFont14 = new Font("Microsoft YaHei", 14f, FontStyle.Bold);
+            moneyFont12 = new Font("Microsoft YaHei", 12f, FontStyle.Bold);
+            moneyFont10 = new Font("Microsoft YaHei", 10f, FontStyle.Bold);
 
             titleL = L("上班鼓励器", 8, 8, 82, 22, f10, Program.Themes[Program.cfg.Theme].Main);
             skinBtn = B("换肤", 92, 8, 62, 24, f8); skinBtn.Click += delegate { ApplyTheme(Program.cfg.Theme + 1); Program.SaveConfig(Program.cfg); };
@@ -320,7 +326,15 @@ namespace WorkEncourager
             else if (status == "下班啦") statusL.ForeColor = t.Off;
             else statusL.ForeColor = t.Idle;
 
-            moneyL.Text = "¥" + earned.ToString("0.0000", CultureInfo.InvariantCulture);
+            string moneyText = "¥" + earned.ToString("0.0000", CultureInfo.InvariantCulture);
+            moneyL.Text = moneyText;
+            // 金额越长字号越小，保证 121px 宽度内完整显示（100 元以上不再被截断）
+            int wantSize = moneyText.Length <= 8 ? 16 : (moneyText.Length == 9 ? 14 : (moneyText.Length == 10 ? 12 : 10));
+            if (wantSize != moneyFontSize)
+            {
+                moneyFontSize = wantSize;
+                moneyL.Font = wantSize == 16 ? moneyFont16 : (wantSize == 14 ? moneyFont14 : (wantSize == 12 ? moneyFont12 : moneyFont10));
+            }
             speedL.Text = "¥" + speed.ToString("0.0000", CultureInfo.InvariantCulture) + " / 秒";
 
             Item it = Program.Items[itemIdx];
