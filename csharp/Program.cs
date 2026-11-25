@@ -154,8 +154,8 @@ namespace WorkEncourager
         Label titleL, dateL, clockL, statusL, cdL, capL, moneyL, speedL, phraseL, progL, monthL;
         Button skinBtn, pinBtn, setBtn, toggleBtn;
         ProgressBar bar;
-        Font moneyFont16, moneyFont14, moneyFont12, moneyFont10;
-        int moneyFontSize = 16;
+        Font moneyFont14, moneyFont12, moneyFont10, moneyFont8;
+        int moneyFontSize = 14;
         Timer timer;
         DateTime vNow, lastReal;
         bool running = true, topmost = false;
@@ -168,7 +168,9 @@ namespace WorkEncourager
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             StartPosition = FormStartPosition.CenterScreen;
-            ClientSize = new Size(245, 330);
+            // 固定像素布局：不让系统字体/DPI 缩放控件尺寸，避免别人电脑上字体偏大时布局错乱
+            AutoScaleMode = AutoScaleMode.None;
+            ClientSize = new Size(270, 335);
             try
             {
                 Stream s = typeof(Program).Assembly.GetManifestResourceStream("app.ico");
@@ -177,56 +179,58 @@ namespace WorkEncourager
             catch { }
             ApplyTheme(Program.cfg.Theme);
 
+            // 整体字号比上一版再降一档，留足余量防止字体偏大的电脑显示不全
+            Font f7 = new Font("Microsoft YaHei", 7f);
             Font f8 = new Font("Microsoft YaHei", 8f);
-            Font f9 = new Font("Microsoft YaHei", 9f);
-            Font f10 = new Font("Microsoft YaHei", 10f, FontStyle.Bold);
+            Font f9 = new Font("Microsoft YaHei", 9f, FontStyle.Bold);
+            Font f11 = new Font("Microsoft YaHei", 11f, FontStyle.Bold);
             Font f12 = new Font("Microsoft YaHei", 12f, FontStyle.Bold);
-            Font f13 = new Font("Microsoft YaHei", 13f, FontStyle.Bold);
-            Font f16 = new Font("Microsoft YaHei", 16f, FontStyle.Bold);
-            moneyFont16 = f16;
             moneyFont14 = new Font("Microsoft YaHei", 14f, FontStyle.Bold);
             moneyFont12 = new Font("Microsoft YaHei", 12f, FontStyle.Bold);
             moneyFont10 = new Font("Microsoft YaHei", 10f, FontStyle.Bold);
+            moneyFont8 = new Font("Microsoft YaHei", 8f, FontStyle.Bold);
 
-            titleL = L("上班鼓励器", 8, 8, 82, 22, f10, Program.Themes[Program.cfg.Theme].Main);
-            skinBtn = B("换肤", 92, 8, 62, 24, f8); skinBtn.Click += delegate { ApplyTheme(Program.cfg.Theme + 1); Program.SaveConfig(Program.cfg); };
-            pinBtn = B("置顶", 158, 8, 46, 24, f8); pinBtn.Click += delegate { TogglePin(); };
-            setBtn = B("设置", 208, 8, 29, 24, f8); setBtn.Click += delegate { SettingsForm sf = new SettingsForm(); sf.ShowDialog(this); };
+            titleL = L("上班鼓励器", 8, 10, 82, 20, f9, Program.Themes[Program.cfg.Theme].Main);
+            skinBtn = B("换肤", 92, 8, 80, 26, f8); skinBtn.Click += delegate { ApplyTheme(Program.cfg.Theme + 1); Program.SaveConfig(Program.cfg); };
+            pinBtn = B("置顶", 176, 8, 42, 26, f8); pinBtn.Click += delegate { TogglePin(); };
+            setBtn = B("设置", 222, 8, 40, 26, f8); setBtn.Click += delegate { SettingsForm sf = new SettingsForm(); sf.ShowDialog(this); };
 
-            dateL = L("", 8, 42, 112, 16, f8, Program.Themes[Program.cfg.Theme].Sub);
-            clockL = L("00:00:00", 8, 58, 112, 26, f13, Program.Themes[Program.cfg.Theme].Body);
-            statusL = L("上班中", 8, 86, 112, 22, f12, Program.Themes[Program.cfg.Theme].Main);
-            cdL = L("距下班 --", 8, 110, 116, 16, f8, Program.Themes[Program.cfg.Theme].Sub);
+            // 左栏：日期 / 时间 / 状态 / 倒计时（贴左，宽度留余量）
+            dateL = L("", 8, 44, 124, 15, f7, Program.Themes[Program.cfg.Theme].Sub);
+            clockL = L("00:00:00", 8, 60, 124, 26, f12, Program.Themes[Program.cfg.Theme].Body);
+            statusL = L("上班中", 8, 90, 124, 20, f11, Program.Themes[Program.cfg.Theme].Main);
+            cdL = L("距下班 --", 8, 114, 124, 15, f7, Program.Themes[Program.cfg.Theme].Sub);
 
-            capL = L("今日已赚", 126, 42, 111, 16, f8, Program.Themes[Program.cfg.Theme].Sub);
+            // 右栏：今日已赚 / 金额 / 速度（贴右，中间留白）
+            capL = L("今日已赚", 138, 44, 124, 15, f7, Program.Themes[Program.cfg.Theme].Sub);
             capL.TextAlign = ContentAlignment.TopRight;
-            moneyL = L("¥0.0000", 116, 57, 121, 28, f16, Program.Themes[Program.cfg.Theme].Money);
+            moneyL = L("¥0.0000", 130, 58, 132, 30, moneyFont14, Program.Themes[Program.cfg.Theme].Money);
             moneyL.TextAlign = ContentAlignment.TopRight;
-            speedL = L("", 110, 110, 127, 16, f8, Program.Themes[Program.cfg.Theme].Sub);
+            speedL = L("", 130, 114, 132, 15, f7, Program.Themes[Program.cfg.Theme].Sub);
             speedL.TextAlign = ContentAlignment.TopRight;
 
-            phraseL = L("再过 --，今天的价钱就能买 1 杯奶茶了。", 8, 138, 229, 30, f9, Program.Themes[Program.cfg.Theme].Body);
+            phraseL = L("今天的价钱能买 1 杯奶茶啦！", 8, 138, 254, 34, f8, Program.Themes[Program.cfg.Theme].Body);
 
-            toggleBtn = B("关闭计时器", 8, 172, 229, 26, f9);
+            toggleBtn = B("关闭计时器", 8, 178, 254, 28, f9);
             toggleBtn.Click += delegate
             {
                 running = !running;
                 toggleBtn.Text = running ? "关闭计时器" : "开启计时器";
             };
 
-            progL = L("", 8, 204, 229, 28, f8, Program.Themes[Program.cfg.Theme].Sub);
+            progL = L("", 8, 212, 254, 28, f7, Program.Themes[Program.cfg.Theme].Sub);
             bar = new ProgressBar();
-            bar.Location = new Point(8, 234); bar.Size = new Size(229, 14);
+            bar.Location = new Point(8, 244); bar.Size = new Size(254, 14);
             bar.Minimum = 0; bar.Maximum = 100;
             Controls.Add(bar);
 
             Panel sep = new Panel();
-            sep.Location = new Point(8, 256); sep.Size = new Size(229, 1);
+            sep.Location = new Point(8, 268); sep.Size = new Size(254, 1);
             sep.BackColor = Program.Themes[Program.cfg.Theme].Sub;
             Controls.Add(sep);
 
-            Label ml = L("本月累计", 8, 264, 80, 20, f8, Program.Themes[Program.cfg.Theme].Sub);
-            monthL = L("", 120, 263, 117, 22, f10, Program.Themes[Program.cfg.Theme].Money);
+            Label ml = L("本月累计", 8, 278, 80, 20, f8, Program.Themes[Program.cfg.Theme].Sub);
+            monthL = L("", 130, 277, 132, 24, f9, Program.Themes[Program.cfg.Theme].Money);
             monthL.TextAlign = ContentAlignment.TopRight;
 
             vNow = DateTime.Now;
@@ -252,6 +256,8 @@ namespace WorkEncourager
         {
             Label l = new Label();
             l.Text = text; l.Location = new Point(x, y); l.Size = new Size(w, h);
+            // 关键：关闭自动缩放，否则别人电脑上系统字体偏大时 Label 会撑大、挤占相邻控件导致显示不全
+            l.AutoSize = false;
             l.Font = f; l.ForeColor = c; l.BackColor = Color.Transparent;
             Controls.Add(l);
             return l;
@@ -328,12 +334,12 @@ namespace WorkEncourager
 
             string moneyText = "¥" + earned.ToString("0.0000", CultureInfo.InvariantCulture);
             moneyL.Text = moneyText;
-            // 金额越长字号越小，保证 121px 宽度内完整显示（100 元以上不再被截断）
-            int wantSize = moneyText.Length <= 8 ? 16 : (moneyText.Length == 9 ? 14 : (moneyText.Length == 10 ? 12 : 10));
+            // 金额越长字号越小（14/12/10/8pt），在加宽后的 132px 内完整显示
+            int wantSize = moneyText.Length <= 8 ? 14 : (moneyText.Length == 9 ? 12 : (moneyText.Length == 10 ? 10 : 8));
             if (wantSize != moneyFontSize)
             {
                 moneyFontSize = wantSize;
-                moneyL.Font = wantSize == 16 ? moneyFont16 : (wantSize == 14 ? moneyFont14 : (wantSize == 12 ? moneyFont12 : moneyFont10));
+                moneyL.Font = wantSize == 14 ? moneyFont14 : (wantSize == 12 ? moneyFont12 : (wantSize == 10 ? moneyFont10 : moneyFont8));
             }
             speedL.Text = "¥" + speed.ToString("0.0000", CultureInfo.InvariantCulture) + " / 秒";
 
@@ -362,27 +368,32 @@ namespace WorkEncourager
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false; MinimizeBox = false;
             StartPosition = FormStartPosition.CenterParent;
-            ClientSize = new Size(280, 200);
+            AutoScaleMode = AutoScaleMode.None;
+            ClientSize = new Size(300, 215);
             Font = new Font("Microsoft YaHei", 8f);
             BackColor = Program.Themes[Program.cfg.Theme].Bg;
 
-            Label l1 = new Label(); l1.Text = "月薪（元）"; l1.Location = new Point(16, 18); l1.Size = new Size(110, 20); Controls.Add(l1);
-            salary = new NumericUpDown(); salary.Location = new Point(140, 15); salary.Size = new Size(120, 24);
+            Label l1 = new Label(); l1.Text = "月薪（元）"; l1.Location = new Point(16, 18); l1.Size = new Size(120, 20); Controls.Add(l1);
+            salary = new NumericUpDown(); salary.Location = new Point(150, 15); salary.Size = new Size(134, 24);
             salary.Minimum = 1; salary.Maximum = 10000000; salary.DecimalPlaces = 2;
             salary.Value = Math.Min(salary.Maximum, Math.Max(salary.Minimum, (decimal)Program.cfg.Salary)); Controls.Add(salary);
 
-            Label l2 = new Label(); l2.Text = "每天工作时长（小时）"; l2.Location = new Point(16, 52); l2.Size = new Size(120, 20); Controls.Add(l2);
-            hours = new NumericUpDown(); hours.Location = new Point(140, 49); hours.Size = new Size(120, 24);
+            Label l2 = new Label(); l2.Text = "每天工作时长（小时）"; l2.Location = new Point(16, 52); l2.Size = new Size(130, 20); Controls.Add(l2);
+            hours = new NumericUpDown(); hours.Location = new Point(150, 49); hours.Size = new Size(134, 24);
             hours.Minimum = 1; hours.Maximum = 24; hours.DecimalPlaces = 2;
             hours.Value = Math.Min(hours.Maximum, Math.Max(hours.Minimum, (decimal)Program.cfg.Hours)); Controls.Add(hours);
 
-            Label l3 = new Label(); l3.Text = "上班时间（HH:mm）"; l3.Location = new Point(16, 86); l3.Size = new Size(120, 20); Controls.Add(l3);
-            start = new TextBox(); start.Location = new Point(140, 83); start.Size = new Size(120, 24); start.Text = Program.cfg.Start; Controls.Add(start);
+            Label l3 = new Label(); l3.Text = "上班时间（HH:mm）"; l3.Location = new Point(16, 86); l3.Size = new Size(130, 20); Controls.Add(l3);
+            start = new TextBox(); start.Location = new Point(150, 83); start.Size = new Size(134, 24); start.Text = Program.cfg.Start; Controls.Add(start);
 
-            Label l4 = new Label(); l4.Text = "下班时间（HH:mm）"; l4.Location = new Point(16, 120); l4.Size = new Size(120, 20); Controls.Add(l4);
-            end = new TextBox(); end.Location = new Point(140, 117); end.Size = new Size(120, 24); end.Text = Program.cfg.End; Controls.Add(end);
+            Label l4 = new Label(); l4.Text = "下班时间（HH:mm）"; l4.Location = new Point(16, 120); l4.Size = new Size(130, 20); Controls.Add(l4);
+            end = new TextBox(); end.Location = new Point(150, 117); end.Size = new Size(134, 24); end.Text = Program.cfg.End; Controls.Add(end);
 
-            Button ok = new Button(); ok.Text = "保存"; ok.Location = new Point(110, 158); ok.Size = new Size(72, 26);
+            // 固定 Label 尺寸，防止系统字体偏大时撑开
+            foreach (Control ctl in Controls)
+                if (ctl is Label) ((Label)ctl).AutoSize = false;
+
+            Button ok = new Button(); ok.Text = "保存"; ok.Location = new Point(130, 168); ok.Size = new Size(72, 26);
             ok.Click += delegate
             {
                 int s = Program.ParseHM(start.Text), e = Program.ParseHM(end.Text);
@@ -400,7 +411,7 @@ namespace WorkEncourager
                 Close();
             };
             Controls.Add(ok);
-            Button cancel = new Button(); cancel.Text = "取消"; cancel.Location = new Point(190, 158); cancel.Size = new Size(72, 26);
+            Button cancel = new Button(); cancel.Text = "取消"; cancel.Location = new Point(210, 168); cancel.Size = new Size(72, 26);
             cancel.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
             Controls.Add(cancel);
         }
